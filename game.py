@@ -6,9 +6,9 @@ from enemy import Enemy
 from chasing_enemy import ChasingEnemy
 from assets import load_assets
 
-cell_size = 30
+# cell_size = 30
 
-def run_single_level(spec, screen, clock, font):
+def run_single_level(spec, screen, clock, font, cell_size):
     size = spec["size"]
     patrol_count = spec["patrol"]
     chase_count = spec["chase"]

@@ -1,14 +1,7 @@
 import pygame
 from game import run_single_level
 
-# ─── Initialization ────────────────────────────────
-pygame.init()
-screen = pygame.display.set_mode((400, 400))  # Temporary placeholder size
-pygame.display.set_caption("Maze Sentinel – Levels")
-clock = pygame.time.Clock()
-font = pygame.font.SysFont(None, 24)
-
-# ─── Level Specifications ───────────────────────────
+# Specs for each level
 LEVELS = [
     {"size": 12, "patrol": 1, "chase": 0, "level": 1},
     {"size": 14, "patrol": 2, "chase": 0, "level": 2},
@@ -17,31 +10,32 @@ LEVELS = [
     {"size": 20, "patrol": 0, "chase": 1, "level": 5},
 ]
 
-# ─── Level Loop ─────────────────────────────────────
-for spec in LEVELS:
-    cell_size = 30
-    width = height = spec["size"] * cell_size
-    screen = pygame.display.set_mode((width, height))  # Resize window
+def play_from_level(start_level=1):
+    pygame.font.init()
+    font = pygame.font.SysFont(None, 24)
+    clock = pygame.time.Clock()
 
-    won = run_single_level(spec, screen, clock, font)
-    if not won:
-        break  # Player died or exited
+    for i in range(start_level - 1, len(LEVELS)):
+        spec = LEVELS[i]
+        cell_size = 30
+        width = height = spec["size"] * cell_size
+        screen = pygame.display.set_mode((width, height))
 
-    # ─── Show "Level Complete" splash ───
+        won = run_single_level(spec, screen, clock, font)
+        if not won:
+            return  # player died or quit
+
+        # Level complete splash
+        screen.fill((0, 0, 0))
+        msg = font.render(f"✅ Level {spec['level']} Complete!", True, (0, 255, 0))
+        screen.blit(msg, msg.get_rect(center=(width // 2, height // 2)))
+        pygame.display.flip()
+        pygame.time.wait(1200)
+
+    # Final completion screen
     screen.fill((0, 0, 0))
-    splash = font.render("✅ Level Complete!", True, (0, 255, 0))
-    rect = splash.get_rect(center=(width // 2, height // 2))
-    screen.blit(splash, rect)
-    pygame.display.flip()
-    pygame.time.wait(1200)
-
-# ─── All Levels Completed ───────────────────────────
-else:
-    screen.fill((0, 0, 0))
-    final = font.render("🏆 You beat all 5 levels!", True, (255, 215, 0))
-    rect = final.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
-    screen.blit(final, rect)
+    msg = font.render("🏆 You beat all 5 levels!", True, (255, 215, 0))
+    screen.blit(msg, msg.get_rect(center=(width // 2, height // 2)))
     pygame.display.flip()
     pygame.time.wait(2000)
 
-pygame.quit()

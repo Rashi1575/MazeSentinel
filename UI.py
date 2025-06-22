@@ -2,8 +2,8 @@ import pygame
 import sys
 import os
 import random
-import math
 import cv2
+from play_levels import play_from_level
 
 
 # Initialize pygame
@@ -11,11 +11,8 @@ pygame.init()
 pygame.mixer.init()
 
 # Load video using OpenCV
-video = cv2.VideoCapture("56481-479644998_small.mp4")  # Put your video file in the game folder
+video = cv2.VideoCapture("uhd_30fps.mp4")  # Put your video file in the game folder
 success, video_frame = video.read()
-
-
-
 
 # Screen dimensions
 SCREEN_WIDTH = 1024
@@ -45,16 +42,6 @@ INDIAN_RED = (205, 92, 92)
 MAROON = (128, 0, 0)
 ROSE = (255, 0, 127)
 
-
-# # Font handling with Cabin font
-# try:
-#     # Try to load Cabin font (make sure 'Cabin-Regular.ttf' is in your game directory)
-#     cabin_font = pygame.font.Font("Cabin-Regular.ttf", 32)
-#     title_font = pygame.font.Font("Cabin-Regular.ttf", 64)
-#     button_font = pygame.font.Font("Cabin-Regular.ttf", 32)
-#     text_font = pygame.font.Font("Cabin-Regular.ttf", 24)
-# except:
-#     # Fallback to system fonts if Cabin isn't available
 cabin_font = pygame.font.SysFont('Impact', 32)
 title_font = pygame.font.SysFont('Georgia', 64, bold=True)
 button_font = pygame.font.SysFont('Comic Sans MS', 32, bold=True)
@@ -239,19 +226,6 @@ about_button = Button(SCREEN_WIDTH//2 - 150, 540, 300, 60, "ABOUT", DARK_BLACK, 
 exit_button = Button(SCREEN_WIDTH//2 - 150, 620, 300, 60, "  EXIT", DARK_BLACK, (200, 120, 255))
 back_button = Button(50, SCREEN_HEIGHT - 100, 200, 50, "  BACK", GRAY, (200, 120, 255))
 
-# Level selection buttons
-# level_buttons = []
-# for i in range(5):
-#     level_color = (150 + i*20, 100 + i*30, 200 - i*10)
-#     hover_color = (min(255, level_color[0]+50), min(255, level_color[1]+50), min(255, level_color[2]+50))
-#     level_buttons.append(Button(
-#         SCREEN_WIDTH//2 - 150,
-#         200 + i*90,
-#         300, 60,
-#         f"LEVEL {i+1}",
-#         level_color,
-#         hover_color
-#     ))
 level_buttons = []
 red_shades = [
     (255, 180, 180),  # Light Red
@@ -276,7 +250,6 @@ for i in range(5):
         level_color,
         hover_color
     ))
-
 
 # Create volume sliders
 master_slider = Slider(SCREEN_WIDTH//1.7 - 50, 190, 200, 10, 0, 100, master_volume * 100)
@@ -327,15 +300,38 @@ while running:
         elif current_state == STATE_LEVELS:
             if back_button.is_clicked(mouse_pos, event):
                 current_state = STATE_MAIN
-            # for i, button in enumerate(level_buttons):
-            #     if button.is_clicked(mouse_pos, event):
-            #         print(f"Starting Level {i+1}")
-            for i, button in enumerate(level_buttons):
-                if button.is_clicked(mouse_pos, event):
-                     selected_level = i + 1
-                     show_transition = True
-                     transition_alpha = 255
-                     transition_timer = pygame.time.get_ticks()
+            
+
+            # NEWWWWW
+            elif current_state == STATE_LEVELS:
+                for i, button in enumerate(level_buttons):
+                    if button.is_clicked(mouse_pos, event):
+                        selected_level = i + 1
+
+                        # Fade transition (optional)
+                        show_transition = True
+                        transition_alpha = 255
+                        transition_timer = pygame.time.get_ticks()
+                        pygame.display.flip()
+                        pygame.time.wait(700)
+
+                        # ⏸️ Pause music and ambience
+                        if audio_available:
+                            pygame.mixer.music.pause()
+                            sound_objects["ambience"].stop()
+
+                        # 🎮 Start gameplay
+                        play_from_level(selected_level)
+
+                        # ▶️ Resume music when level ends
+                        if audio_available:
+                            pygame.mixer.music.unpause()
+                            sound_objects["ambience"].play(-1)
+
+                        # Return to menu
+                        current_state = STATE_MAIN
+
+
 
         elif current_state == STATE_SETTINGS:
             if back_button.is_clicked(mouse_pos, event):
@@ -377,14 +373,6 @@ while running:
     draw_main_container()
     
     if current_state == STATE_MAIN:
-        # draw_title("MAZE SENTINEL", 130, (100, 255, 255))
-        # subtitle = text_font.render("Clear the labyrinth's secrets", True, LIGHT_CYAN)
-        # screen.blit(subtitle, subtitle.get_rect(center=(SCREEN_WIDTH//2, 200)))
-        
-        # play_button.draw(screen)
-        # rules_button.draw(screen)
-        # settings_button.draw(screen)
-        # about_button.draw(screen)
         success, video_frame = video.read()
         if not success:
             video.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Loop video

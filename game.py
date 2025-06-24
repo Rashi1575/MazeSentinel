@@ -37,7 +37,7 @@ def run_single_level(spec, screen, clock, font, cell_size):
 
     pygame.mixer.init()
     click_sound = pygame.mixer.Sound("click.mp3")
-    step_sound = pygame.mixer.Sound("foot-step-snow-12-189872.mp3")
+    step_sound = pygame.mixer.Sound("wood-step-sample-1-47664.mp3")
     caught_sound = pygame.mixer.Sound("explode3-87806.mp3")  # 🎵 Load caught sound
     pygame.mixer.music.load("maze_soundtrack.mp3")
     pygame.mixer.music.set_volume(0.5)
@@ -120,12 +120,17 @@ def run_single_level(spec, screen, clock, font, cell_size):
                             e.update()
 
         if paused and show_pause_menu:
-            if show_pause_menu_screen(screen, clock, click_sound, spec, font, cell_size) == 'exit':
+            menu_result = show_pause_menu_screen(screen, clock, click_sound, spec, font, cell_size)
+            if menu_result == 'exit':
                 pygame.mixer.music.stop()
                 return None
+            elif menu_result == 'restart':
+                pygame.mixer.music.stop()
+                return run_single_level(spec, screen, clock, font, cell_size)
             paused = False
             show_pause_menu = False
             continue
+
 
         if (player.row, player.col) in maze.keys[:]:
             player.keys += 1

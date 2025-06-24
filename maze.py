@@ -129,13 +129,19 @@ class Maze:
     # ── DRAW helpers (no offsets) ──
     def draw(self, screen, cs):
         white = (255, 255, 255)
+        wall_thickness = 8  # Increased thickness here
+
         for row in self.grid:
             for cell in row:
                 x, y = cell.col * cs, cell.row * cs
-                if cell.walls["top"]:    pygame.draw.line(screen, white, (x, y), (x+cs, y), 2)
-                if cell.walls["right"]:  pygame.draw.line(screen, white, (x+cs, y), (x+cs, y+cs), 2)
-                if cell.walls["bottom"]: pygame.draw.line(screen, white, (x, y+cs), (x+cs, y+cs), 2)
-                if cell.walls["left"]:   pygame.draw.line(screen, white, (x, y), (x, y+cs), 2)
+                if cell.walls["top"]:
+                    pygame.draw.line(screen, white, (x, y), (x + cs, y), wall_thickness)
+                if cell.walls["right"]:
+                    pygame.draw.line(screen, white, (x + cs, y), (x + cs, y + cs), wall_thickness)
+                if cell.walls["bottom"]:
+                    pygame.draw.line(screen, white, (x, y + cs), (x + cs, y + cs), wall_thickness)
+                if cell.walls["left"]:
+                    pygame.draw.line(screen, white, (x, y), (x, y + cs), wall_thickness)
 
     def draw_keys(self, screen, cs, assets):
         for r, c in self.keys:

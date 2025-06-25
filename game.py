@@ -16,7 +16,6 @@ def run_single_level(spec, screen, clock, font, cell_size):
     player = Player(0, 0, cell_size)
     goal = (size - 1, size - 1)
     assets = load_assets(cell_size)
-
     enemies = []
     for i in range(patrol_count):
         start_r = 2 + i * 6

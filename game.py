@@ -1,5 +1,6 @@
 import random
 import pygame
+import time
 from maze import Maze
 from player import Player
 from enemy import Enemy
@@ -12,11 +13,15 @@ def run_single_level(spec, screen, clock, font, cell_size):
     chase_count = spec["chase"]
     level_number = spec["level"]
 
+    time_limit = 60 + (level_number - 1) * 15  # Level 1: 60s, +15s per level
+    start_time = time.time()
+
     maze = Maze(size, size)
     player = Player(0, 0, cell_size)
     goal = (size - 1, size - 1)
     assets = load_assets(cell_size)
     enemies = []
+
     for i in range(patrol_count):
         start_r = 2 + i * 6
         start_c = 2
@@ -37,7 +42,7 @@ def run_single_level(spec, screen, clock, font, cell_size):
     pygame.mixer.init()
     click_sound = pygame.mixer.Sound("click.mp3")
     step_sound = pygame.mixer.Sound("wood-step-sample-1-47664.mp3")
-    caught_sound = pygame.mixer.Sound("explode3-87806.mp3")  # 🎵 Load caught sound
+    caught_sound = pygame.mixer.Sound("explode3-87806.mp3")
     pygame.mixer.music.load("maze_soundtrack.mp3")
     pygame.mixer.music.set_volume(0.5)
     pygame.mixer.music.play(-1)
@@ -57,12 +62,13 @@ def run_single_level(spec, screen, clock, font, cell_size):
     show_pause_menu = False
     pause_btn_rect = pygame.Rect(screen.get_width() - 60, 10, 50, 50)
 
-    def draw_legend():
+    def draw_legend(remaining_time):
         legend_lines = [
             f"Level {level_number}/5",
             f"Keys: {player.keys}",
             f"Shields: {player.shield_uses}",
-            f"Enemies Defeated: {defeated}"
+            f"Enemies Defeated: {defeated}",
+            f"Time Left: {int(remaining_time)} s"
         ]
         spacing = 32
         total_height = spacing * len(legend_lines)
@@ -88,6 +94,18 @@ def run_single_level(spec, screen, clock, font, cell_size):
                          (center_x + gap // 2, center_y - bar_height // 2, bar_width, bar_height))
 
     while running:
+        current_time = time.time()
+        elapsed_time = current_time - start_time
+        remaining_time = max(0, time_limit - elapsed_time)
+
+        if remaining_time <= 0:
+            pygame.mixer.music.stop()
+            action = show_time_up_screen(screen, clock, click_sound, font)
+            if action == 'retry':
+                return run_single_level(spec, screen, clock, font, cell_size)
+            else:
+                return None
+
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 pygame.mixer.music.stop()
@@ -130,7 +148,6 @@ def run_single_level(spec, screen, clock, font, cell_size):
             show_pause_menu = False
             continue
 
-
         if (player.row, player.col) in maze.keys[:]:
             player.keys += 1
             maze.keys.remove((player.row, player.col))
@@ -149,7 +166,7 @@ def run_single_level(spec, screen, clock, font, cell_size):
                     defeated += 1
                     player.consume_shield()
                 else:
-                    caught_sound.play()  # 🎵 Play caught sound
+                    caught_sound.play()
                     pygame.mixer.music.stop()
                     action = show_caught_screen(screen, clock, click_sound, spec, font, cell_size)
                     if action == 'retry':
@@ -167,8 +184,8 @@ def run_single_level(spec, screen, clock, font, cell_size):
             return True
 
         screen.fill((0, 0, 0))
-        
         maze.draw(screen, cell_size)
+
         maze.draw_keys(screen, cell_size, assets)
         maze.draw_doors(screen, cell_size, assets)
         maze.draw_powerups(screen, cell_size, assets)
@@ -178,10 +195,50 @@ def run_single_level(spec, screen, clock, font, cell_size):
         for e in enemies:
             e.draw(screen, cell_size, assets["enemy"])
 
-        draw_legend()
+        draw_legend(remaining_time)
 
         pygame.display.flip()
         clock.tick(60)
+
+
+def show_time_up_screen(screen, clock, click_sound, font):
+    btn_font = pygame.font.SysFont('Comic Sans MS', 30, bold=True)
+    overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))
+    screen.blit(overlay, (0, 0))
+
+    title = font.render("Time's up!", True, (255, 50, 50))
+    screen.blit(title, title.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 120)))
+
+    btn_w, btn_h = 300, 60
+    center_x = screen.get_width() // 2
+    y_base = screen.get_height() // 2 - 30
+    retry_rect = pygame.Rect(center_x - btn_w // 2, y_base, btn_w, btn_h)
+    exit_rect = pygame.Rect(center_x - btn_w // 2, y_base + 80, btn_w, btn_h)
+
+    for rect, text in [(retry_rect, "RETRY"), (exit_rect, "EXIT")]:
+        pygame.draw.rect(screen, (20, 25, 45), rect, border_radius=12)
+        pygame.draw.rect(screen, (100, 255, 255), rect, 3, border_radius=12)
+        label = btn_font.render(text, True, (255, 255, 255))
+        screen.blit(label, label.get_rect(center=rect.center))
+
+    pygame.display.flip()
+
+    waiting = True
+    while waiting:
+        for ev in pygame.event.get():
+            if ev.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif ev.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = pygame.mouse.get_pos()
+                if retry_rect.collidepoint(mx, my):
+                    click_sound.play()
+                    return 'retry'
+                elif exit_rect.collidepoint(mx, my):
+                    click_sound.play()
+                    return 'exit'
+        clock.tick(15)
 
 
 def show_pause_menu_screen(screen, clock, click_sound, spec, font, cell_size):
